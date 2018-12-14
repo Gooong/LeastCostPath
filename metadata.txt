@@ -1,0 +1,39 @@
+# This file contains metadata for your plugin. Since 
+# version 2.0 of QGIS this is the proper way to supply 
+# information about a plugin. The old method of 
+# embedding metadata in __init__.py will 
+# is no longer supported since version 2.0.
+
+# This file should be included when you package your plugin.# Mandatory items:
+
+[general]
+name=Least Cost Path
+qgisMinimumVersion=3.0
+description=Find the least cost path with given cost raster and points
+version=1
+author=FlowMap Group@SESS.PKU
+email=xurigong@gmail.com
+
+about=This plugin finds the least cost path with given cost raster and points.
+
+tracker=https://github.com/Gooong/LeastCostPath
+repository=https://github.com/Gooong/LeastCostPath
+# End of mandatory metadata
+
+# Recommended items:
+
+# Uncomment the following line and add your changelog:
+# changelog=
+
+# Tags are comma separated with spaces allowed
+tags=least cost path distance raster analysis
+
+homepage=https://github.com/Gooong/LeastCostPath
+category=Analysis
+icon=icon.png
+# experimental flag
+experimental=False
+
+# deprecated flag (applies to the whole plugin, not just a single version)
+deprecated=False
+
