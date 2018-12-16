@@ -3,6 +3,9 @@
 
 This algorithm finds the least cost path with given cost raster and points. 
 
+![Interface](example/images/interface.png)
+![Result](example/images/result.png)
+
 **Parameters:**
   
   Please ensure all the input layers have the same CRS.
