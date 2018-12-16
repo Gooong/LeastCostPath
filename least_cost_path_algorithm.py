@@ -233,7 +233,6 @@ class LeastCostPathAlgorithm(QgsProcessingAlgorithm):
         if contains_negative:
             raise QgsProcessingException(self.tr("ERROR: Cost raster contains negative value."))
 
-        # feedback.setProgress(10)
         feedback.pushInfo(self.tr("Searching least cost path..."))
 
         min_cost_path, costs, selected_end = dijkstra(start_row_col, end_row_cols, matrix, feedback)
@@ -241,7 +240,6 @@ class LeastCostPathAlgorithm(QgsProcessingAlgorithm):
         if min_cost_path is None:
             raise QgsProcessingException(self.tr("ERROR: The end-point(s) is not reachable from start-point."))
 
-        # feedback.setProgress(90)
         feedback.pushInfo(self.tr("Search completed! Saving path.."))
 
         start_point = start_row_cols_dict[start_row_col]

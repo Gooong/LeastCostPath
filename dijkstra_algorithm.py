@@ -104,7 +104,11 @@ def dijkstra(start_row_col, end_row_cols, block, feedback=None):
         current_cost, current_node = frontier.get()
 
         # update the progress bar
+
         if feedback:
+            if feedback.isCanceled():
+                return None, None, None
+
             curr_manhattan = grid.min_manhattan(current_node, end_row_cols)
             if curr_manhattan < min_manhattan:
                 min_manhattan = curr_manhattan
