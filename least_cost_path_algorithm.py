@@ -134,12 +134,6 @@ class LeastCostPathAlgorithm(QgsProcessingAlgorithm):
         """
         Here is where the processing itself takes place.
         """
-
-        # Retrieve the feature source and sink. The 'dest_id' variable is used
-        # to uniquely identify the feature sink, and must be included in the
-        # dictionary returned by the processAlgorithm function.
-        feedback.setProgress(0)
-
         cost_raster = self.parameterAsRasterLayer(
             parameters,
             self.INPUT_COST_RASTER,
@@ -186,6 +180,9 @@ class LeastCostPathAlgorithm(QgsProcessingAlgorithm):
         if cost_raster.crs() != start_source.sourceCrs() \
                 or start_source.sourceCrs() != end_source.sourceCrs():
             raise QgsProcessingException(self.tr("ERROR: The input layers have different CRSs."))
+
+        if cost_raster.rasterType() not in [cost_raster.Multiband, cost_raster.GrayOrUndefined]:
+            raise QgsProcessingException(self.tr("ERROR: The input cost raster is not numeric."))
 
         sink_fields = MinCostPathHelper.create_fields()
         output_geometry_type = QgsWkbTypes.LineStringM if output_linear_reference else QgsWkbTypes.LineString
@@ -294,6 +291,38 @@ class LeastCostPathAlgorithm(QgsProcessingAlgorithm):
 
     def createInstance(self):
         return LeastCostPathAlgorithm()
+
+    def helpUrl(self):
+        return 'https://github.com/Gooong/LeastCostPath'
+
+    def shortHelpString(self):
+        return self.tr("""
+        This algorithm finds the least cost path with given cost raster and points. 
+        
+        **Parameters:**
+          
+          Please ensure all the input layers have the same CRS.
+        
+          - Cost raster layer: Numeric raster layer that represents the cost of each spatial unit. It should not contains negative value. Pixel with `NoData` value represent it is unreachable.
+         
+          - Cost raster band: The input band of the cost raster.
+         
+          - Start-point layer: Layer that contains just one start point.
+         
+          - End-point(s) layer: Layer that contains the destination point(s). If more than one destination are provided, the least cost path will connect start point with the nearest one.
+         
+          - Include liner referencing (PolylineM type): If selected, this algorithm will output the least cost path in `PolylineM` type, with the accumulated cost as linear referencing value.
+         
+        """)
+
+    def shortDescription(self):
+        return self.tr('Find the least cost path with given cost raster and points.')
+
+    def svgIconPath(self):
+        return ""
+
+    def tags(self):
+        return ['least', 'cost', 'path', 'distance', 'raster', 'analysis', 'road']
 
 
 class MinCostPathHelper:

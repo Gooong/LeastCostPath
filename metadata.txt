@@ -26,7 +26,7 @@ repository=https://github.com/Gooong/LeastCostPath
 # changelog=
 
 # Tags are comma separated with spaces allowed
-tags=least cost path distance raster analysis
+tags=least cost path distance raster analysis road
 
 homepage=https://github.com/Gooong/LeastCostPath
 category=Analysis
