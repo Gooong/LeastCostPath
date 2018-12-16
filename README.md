@@ -21,3 +21,6 @@ This algorithm finds the least cost path with given cost raster and points.
  - \[Optional\] Include liner referencing (PolylineM type): If selected, this algorithm will output the least cost path in `PolylineM` type, with the accumulated cost as linear referencing value.
  
  
+**Contributors:**
+
+JinxinGuo, XiaoyueXing, GezhiXiu, ShuoshuoShang, XuriGong
