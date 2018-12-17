@@ -32,6 +32,7 @@ __revision__ = '$Format:%H$'
 
 from math import sqrt
 import queue
+import random
 
 
 def astar(start_row_col, end_row_cols, block, feedback=None):
@@ -58,17 +59,20 @@ def astar(start_row_col, end_row_cols, block, feedback=None):
             x, y = id
             results = [(x + 1, y), (x, y - 1), (x - 1, y), (x, y + 1),
                        (x + 1, y - 1), (x + 1, y + 1), (x - 1, y - 1), (x - 1, y + 1)]
-            results = filter(self._in_bounds, results)
-            results = filter(self._passable, results)
+            results = filter(self.is_valid, results)
             return results
 
-        def _manhattan_distance(self, id1, id2):
+        @staticmethod
+        def manhattan_distance(id1, id2):
             x1, y1 = id1
             x2, y2 = id2
             return abs(x1 - x2) + abs(y1 - y2)
 
+        def heuristic(self, id1, id2):
+            return self.manhattan_distance(id1, id2)*100
+
         def min_manhattan(self, curr_node, end_nodes):
-            return min(map(lambda node: self._manhattan_distance(curr_node, node), end_nodes))
+            return min(map(lambda node: self.manhattan_distance(curr_node, node), end_nodes))
 
         def simple_cost(self, cur, nex):
             cx, cy = cur
@@ -82,6 +86,8 @@ def astar(start_row_col, end_row_cols, block, feedback=None):
 
     grid = Grid(block)
     end_row_cols = set(end_row_cols)
+    end_row_col_list = list(end_row_cols)
+    goal = end_row_col_list[0]
 
     frontier = queue.PriorityQueue()
     frontier.put((0, start_row_col))
@@ -90,9 +96,11 @@ def astar(start_row_col, end_row_cols, block, feedback=None):
 
     if not grid.is_valid(start_row_col):
         return None, None, None
+    if start_row_col in end_row_cols:
+        return None, None, None
 
     # update the progress bar
-    total_manhattan = grid.min_manhattan(start_row_col, end_row_cols)
+    total_manhattan = grid.min_manhattan(start_row_col, end_row_col_list)
     min_manhattan = total_manhattan
     feedback.setProgress(100 * (1 - min_manhattan / total_manhattan))
 
@@ -107,8 +115,7 @@ def astar(start_row_col, end_row_cols, block, feedback=None):
         if feedback:
             if feedback.isCanceled():
                 return None, None, None
-
-            curr_manhattan = grid.min_manhattan(current_node, end_row_cols)
+            curr_manhattan = grid.manhattan_distance(current_node, random.choice(end_row_col_list))
             if curr_manhattan < min_manhattan:
                 min_manhattan = curr_manhattan
                 feedback.setProgress(100 * (1 - min_manhattan / total_manhattan))
@@ -120,7 +127,8 @@ def astar(start_row_col, end_row_cols, block, feedback=None):
             new_cost = cost_so_far[current_node] + grid.simple_cost(current_node, nex)
             if nex not in cost_so_far or new_cost < cost_so_far[nex]:
                 cost_so_far[nex] = new_cost
-                frontier.put((new_cost, nex))
+                priority = new_cost + grid.heuristic(goal, nex)
+                frontier.put((priority, nex))
                 came_from[nex] = current_node
 
     if current_node in end_row_cols:

@@ -168,6 +168,7 @@ class LeastCostPathAlgorithm(QgsProcessingAlgorithm):
             self.ALGORITHM_OPTION,
             context
         )
+        algorithm_option = 'dijkstra' if algorithm_option == 0 else 'A*'
 
         output_linear_reference = self.parameterAsBool(
             parameters,
@@ -248,7 +249,7 @@ class LeastCostPathAlgorithm(QgsProcessingAlgorithm):
             raise QgsProcessingException(self.tr("ERROR: Cost raster contains negative value."))
 
         feedback.pushInfo(self.tr("Searching least cost path using %s algorithm...") % algorithm_option)
-        if algorithm_option == 0:
+        if algorithm_option == 'dijkstra':
             # dijkstra algorithm
             min_cost_path, costs, selected_end = dijkstra(start_row_col, end_row_cols, matrix, feedback)
         else:
