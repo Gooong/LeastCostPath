@@ -46,10 +46,12 @@ from qgis.core import (
     QgsProcessingParameterFeatureSink,
     QgsProcessingParameterRasterLayer,
     QgsProcessingParameterBand,
+    QgsProcessingParameterEnum,
     QgsProcessingParameterBoolean
 )
 import processing
 from .dijkstra_algorithm import dijkstra
+from .astar_algorithm import astar
 from math import floor, sqrt
 import queue
 
@@ -76,6 +78,7 @@ class LeastCostPathAlgorithm(QgsProcessingAlgorithm):
     INPUT_RASTER_BAND = 'INPUT_RASTER_BAND'
     INPUT_START_LAYER = 'INPUT_START_LAYER'
     INPUT_END_LAYER = 'INPUT_END_LAYER'
+    ALGORITHM_OPTION = 'ALGORITHM_OPTION'
     BOOLEAN_OUTPUT_LINEAR_REFERENCE = 'BOOLEAN_OUTPUT_LINEAR_REFERENCE'
     OUTPUT = 'OUTPUT'
 
@@ -117,6 +120,14 @@ class LeastCostPathAlgorithm(QgsProcessingAlgorithm):
         )
 
         self.addParameter(
+            QgsProcessingParameterEnum(
+                self.ALGORITHM_OPTION,
+                self.tr('Algorithm'),
+                ['dijkstra', 'A*']
+            )
+        )
+
+        self.addParameter(
             QgsProcessingParameterBoolean(
                 self.BOOLEAN_OUTPUT_LINEAR_REFERENCE,
                 self.tr('Include liner referencing (PolylineM type)')
@@ -149,6 +160,12 @@ class LeastCostPathAlgorithm(QgsProcessingAlgorithm):
         start_source = self.parameterAsSource(
             parameters,
             self.INPUT_START_LAYER,
+            context
+        )
+
+        algorithm_option = self.parameterAsEnum(
+            parameters,
+            self.ALGORITHM_OPTION,
             context
         )
 
@@ -230,9 +247,14 @@ class LeastCostPathAlgorithm(QgsProcessingAlgorithm):
         if contains_negative:
             raise QgsProcessingException(self.tr("ERROR: Cost raster contains negative value."))
 
-        feedback.pushInfo(self.tr("Searching least cost path..."))
+        feedback.pushInfo(self.tr("Searching least cost path using %s algorithm...") % algorithm_option)
+        if algorithm_option == 0:
+            # dijkstra algorithm
+            min_cost_path, costs, selected_end = dijkstra(start_row_col, end_row_cols, matrix, feedback)
+        else:
+            # A* algorithm
+            min_cost_path, costs, selected_end = astar(start_row_col, end_row_cols, matrix, feedback)
 
-        min_cost_path, costs, selected_end = dijkstra(start_row_col, end_row_cols, matrix, feedback)
         # feedback.pushInfo(str(min_cost_path))
         if min_cost_path is None:
             raise QgsProcessingException(self.tr("ERROR: The end-point(s) is not reachable from start-point."))
