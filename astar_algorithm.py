@@ -68,13 +68,11 @@ def astar(start_row_col, end_row_cols, block, feedback=None):
             x2, y2 = id2
             return abs(x1 - x2) + abs(y1 - y2)
 
-
         def heuristic(self, id1, id2):
-            return self.manhattan_distance(id1, id2)*100
+            return self.manhattan_distance(id1, id2) * 800
 
         def min_manhattan(self, curr_node, end_nodes):
             return min(map(lambda node: self.manhattan_distance(curr_node, node), end_nodes))
-
 
         def simple_cost(self, cur, nex):
             cx, cy = cur
