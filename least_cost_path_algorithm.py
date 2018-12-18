@@ -31,6 +31,7 @@ __copyright__ = '(C) 2018 by FlowMap Group@SESS.PKU'
 __revision__ = '$Format:%H$'
 
 from PyQt5.QtCore import QCoreApplication, QVariant
+from PyQt5.QtGui import QIcon
 from qgis.core import (
     QgsFeature,
     QgsGeometry,
@@ -235,9 +236,12 @@ class LeastCostPathAlgorithm(QgsProcessingAlgorithm):
         min_cost_path, costs, selected_end = dijkstra(start_row_col, end_row_cols, matrix, feedback)
         # feedback.pushInfo(str(min_cost_path))
         if min_cost_path is None:
-            raise QgsProcessingException(self.tr("ERROR: The end-point(s) is not reachable from start-point."))
-
-        feedback.pushInfo(self.tr("Search completed! Saving path.."))
+            if feedback.isCanceled():
+                raise QgsProcessingException(self.tr("ERROR: Search canceled."))
+            else:
+                raise QgsProcessingException(self.tr("ERROR: The end-point(s) is not reachable from start-point."))
+        feedback.setProgress(100)
+        feedback.pushInfo(self.tr("Search completed! Saving path..."))
 
         start_point = start_row_cols_dict[start_row_col]
         end_point = end_row_cols_dict[selected_end]
@@ -319,7 +323,7 @@ class LeastCostPathAlgorithm(QgsProcessingAlgorithm):
         return self.tr('Find the least cost path with given cost raster and points.')
 
     def svgIconPath(self):
-        return ""
+        return ''
 
     def tags(self):
         return ['least', 'cost', 'path', 'distance', 'raster', 'analysis', 'road']
