@@ -16,7 +16,7 @@ email=xurigong@gmail.com
 
 about=This plugin finds the least cost path with given cost raster and points.
 
-tracker=https://github.com/Gooong/LeastCostPath
+tracker=https://github.com/Gooong/LeastCostPath/issues
 repository=https://github.com/Gooong/LeastCostPath
 # End of mandatory metadata
 
