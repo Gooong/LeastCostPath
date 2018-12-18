@@ -33,6 +33,7 @@ __revision__ = '$Format:%H$'
 from math import sqrt
 import queue
 import random
+import numpy as np
 
 
 def astar(start_row_col, end_row_cols, block, feedback=None):
@@ -43,6 +44,15 @@ def astar(start_row_col, end_row_cols, block, feedback=None):
             self.map = matrix
             self.h = len(matrix)
             self.w = len(matrix[0])
+
+            values = []
+            for l in matrix:
+                for v in l:
+                    if v is not None:
+                        values.append(v)
+            array = np.array(values)
+            self.mean = array.mean()
+            self.stddev = array.std()
 
         def _in_bounds(self, id):
             x, y = id
@@ -68,8 +78,14 @@ def astar(start_row_col, end_row_cols, block, feedback=None):
             x2, y2 = id2
             return abs(x1 - x2) + abs(y1 - y2)
 
+        @staticmethod
+        def ed_distance(id1, id2):
+            x1, y1 = id1
+            x2, y2 = id2
+            return sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1))
+
         def heuristic(self, id1, id2):
-            return self.manhattan_distance(id1, id2) * 800
+            return self.ed_distance(id1, id2) * self.mean / 2
 
         def min_manhattan(self, curr_node, end_nodes):
             return min(map(lambda node: self.manhattan_distance(curr_node, node), end_nodes))
