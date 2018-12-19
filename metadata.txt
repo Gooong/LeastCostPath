@@ -10,7 +10,7 @@
 name=Least-Cost Path
 qgisMinimumVersion=3.0
 description=Find the least cost path with given cost raster and points
-version=0.1
+version=0.2
 author=FlowMap Group@SESS.PKU
 email=xurigong@gmail.com
 
