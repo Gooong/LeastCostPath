@@ -23,4 +23,4 @@ This algorithm finds the least cost path with given cost raster and points.
  
 **Contributors:**
 
-JinxinGuo, XiaoyueXing, GezhiXiu, ShuoshuoShang, XuriGong
+@gjx-123, @ClaireXing, @GXIU, @Shangss, @Gooong
