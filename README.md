@@ -6,9 +6,7 @@ This algorithm finds the least cost path with given cost raster and points.
 ![Interface](example/images/interface.png)
 ![Result](example/images/result.png)
 
-**Parameters:**
-  
-  Please ensure all the input layers have the same CRS.
+Please ensure all the input layers have the same CRS.
 
  - Cost raster layer: Numeric raster layer that represents the cost of each spatial unit. It should not contains negative value. Pixel with `NoData` value represent it is unreachable.
  
@@ -16,8 +14,10 @@ This algorithm finds the least cost path with given cost raster and points.
  
  - Start-point layer: Layer that contains just one start point.
  
- - End-point(s) layer: Layer that contains the destination point(s). If more than one destination are provided, the least cost path will connect start point with the nearest one.
+ - End-point(s) layer: Layer that contains the destination point(s).
  
+- Only connect with the nearest end points: If more than one destination are provided, it will find the least cost path to all the end points by default. If enabled, the least cost path will only connect start point with the nearest end point.
+
  - \[Optional\] Include liner referencing (PolylineM type): If selected, this algorithm will output the least cost path in `PolylineM` type, with the accumulated cost as linear referencing value.
  
  

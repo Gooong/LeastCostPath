@@ -10,11 +10,11 @@
 name=Least-Cost Path
 qgisMinimumVersion=3.0
 description=Find the least cost path with given cost raster and points
-version=0.2
-author=FlowMap Group@SESS.PKU
+version=0.3
+author=FlowMap Group@SESS-PKU
 email=xurigong@gmail.com
 
-about=This plugin finds the least cost path with given cost raster and points.
+about=This plugin finds the least cost path with given cost raster and points. Open "Processing Toolbox -- Cost distance analysis" to use this plugin after installation.
 
 tracker=https://github.com/Gooong/LeastCostPath/issues
 repository=https://github.com/Gooong/LeastCostPath

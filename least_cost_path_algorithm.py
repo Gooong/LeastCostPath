@@ -53,20 +53,12 @@ import processing
 from .dijkstra_algorithm import dijkstra
 from math import floor, sqrt
 import queue
+import collections
 
 
 class LeastCostPathAlgorithm(QgsProcessingAlgorithm):
     """
-    This is an example algorithm that takes a vector layer and
-    creates a new identical one.
-
-    It is meant to be used as an example of how to create your own
-    algorithms and explain methods and variables used to do it. An
-    algorithm like this will be available in all elements, and there
-    is not need for additional work.
-
-    All Processing algorithms should extend the QgsProcessingAlgorithm
-    class.
+    This is the Least Cost Path Plugin that runs dijkstra algorithm
     """
 
     # Constants used to refer to parameters and outputs. They will be
@@ -77,6 +69,7 @@ class LeastCostPathAlgorithm(QgsProcessingAlgorithm):
     INPUT_RASTER_BAND = 'INPUT_RASTER_BAND'
     INPUT_START_LAYER = 'INPUT_START_LAYER'
     INPUT_END_LAYER = 'INPUT_END_LAYER'
+    BOOLEAN_FIND_LEAST_PATH_TO_ALL_ENDS = 'BOOLEAN_FIND_LEAST_PATH_TO_ALL_ENDS'
     BOOLEAN_OUTPUT_LINEAR_REFERENCE = 'BOOLEAN_OUTPUT_LINEAR_REFERENCE'
     OUTPUT = 'OUTPUT'
 
@@ -119,6 +112,14 @@ class LeastCostPathAlgorithm(QgsProcessingAlgorithm):
 
         self.addParameter(
             QgsProcessingParameterBoolean(
+                self.BOOLEAN_FIND_LEAST_PATH_TO_ALL_ENDS,
+                self.tr('Only connect with the nearest end points'),
+                defaultValue = False
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterBoolean(
                 self.BOOLEAN_OUTPUT_LINEAR_REFERENCE,
                 self.tr('Include liner referencing (PolylineM type)')
             )
@@ -135,6 +136,8 @@ class LeastCostPathAlgorithm(QgsProcessingAlgorithm):
         """
         Here is where the processing itself takes place.
         """
+        feedback.setProgress(1)
+
         cost_raster = self.parameterAsRasterLayer(
             parameters,
             self.INPUT_COST_RASTER,
@@ -150,6 +153,12 @@ class LeastCostPathAlgorithm(QgsProcessingAlgorithm):
         start_source = self.parameterAsSource(
             parameters,
             self.INPUT_START_LAYER,
+            context
+        )
+
+        find_nearest = self.parameterAsBool(
+            parameters,
+            self.BOOLEAN_FIND_LEAST_PATH_TO_ALL_ENDS,
             context
         )
 
@@ -205,22 +214,23 @@ class LeastCostPathAlgorithm(QgsProcessingAlgorithm):
 
         start_features = list(start_source.getFeatures())
         # feedback.pushInfo(str(len(start_features)))
-        start_row_cols_dict = MinCostPathHelper.features_to_row_cols(start_features, cost_raster)
-        if len(start_row_cols_dict) == 0:
+
+        # row_col, pointxy, id
+        start_tuples = MinCostPathHelper.features_to_tuples(start_features, cost_raster)
+        if len(start_tuples) == 0:
             raise QgsProcessingException(self.tr("ERROR: The start-point layer contains no legal point."))
-        elif len(start_row_cols_dict) >= 2:
+        elif len(start_tuples) >= 2:
             raise QgsProcessingException(self.tr("ERROR: The start-point layer contains more than one legal point."))
-        start_row_col = list(start_row_cols_dict.keys())[0]
+        start_tuple = start_tuples[0]
 
         end_features = list(end_source.getFeatures())
         # feedback.pushInfo(str(len(end_features)))
-        end_row_cols_dict = MinCostPathHelper.features_to_row_cols(end_features, cost_raster)
-        if len(end_row_cols_dict) == 0:
+        end_tuples = MinCostPathHelper.features_to_tuples(end_features, cost_raster)
+        if len(end_tuples) == 0:
             raise QgsProcessingException(self.tr("ERROR: The end-point layer contains no legal point."))
 
-        if start_row_col in end_row_cols_dict:
-            raise QgsProcessingException(self.tr("ERROR: The end-point(s) overlap with start point."))
-        end_row_cols = list(end_row_cols_dict.keys())
+        # if start_row_col in end_row_cols:
+        #     raise QgsProcessingException(self.tr("ERROR: The end-point(s) overlap with start point."))
         # feedback.pushInfo(str(start_col_rows))
         # feedback.pushInfo(str(end_col_rows))
 
@@ -233,27 +243,40 @@ class LeastCostPathAlgorithm(QgsProcessingAlgorithm):
 
         feedback.pushInfo(self.tr("Searching least cost path..."))
 
-        min_cost_path, costs, selected_end = dijkstra(start_row_col, end_row_cols, matrix, feedback)
+        result = dijkstra(start_tuple, end_tuples, matrix, find_nearest, feedback)
         # feedback.pushInfo(str(min_cost_path))
-        if min_cost_path is None:
-            if feedback.isCanceled():
-                raise QgsProcessingException(self.tr("ERROR: Search canceled."))
-            else:
-                raise QgsProcessingException(self.tr("ERROR: The end-point(s) is not reachable from start-point."))
+        if result is None:
+            raise QgsProcessingException(self.tr("ERROR: Search canceled."))
+
+        if len(result) == 0:
+            raise QgsProcessingException(self.tr("ERROR: The end-point(s) is not reachable from start-point."))
+
         feedback.setProgress(100)
         feedback.pushInfo(self.tr("Search completed! Saving path..."))
 
-        start_point = start_row_cols_dict[start_row_col]
-        end_point = end_row_cols_dict[selected_end]
-        path_points = MinCostPathHelper.create_points_from_path(cost_raster, min_cost_path, start_point, end_point)
-        if output_linear_reference:
-            # add linear reference
-            for point, cost in zip(path_points, costs):
-                point.addMValue(cost)
-        total_cost = costs[-1]
-        path_feature = MinCostPathHelper.create_path_feature_from_points(path_points, total_cost, sink_fields)
+        for path, costs, terminal_tuples in result:
+            for terminal_tuple in terminal_tuples:
+                path_points = MinCostPathHelper.create_points_from_path(cost_raster, path, start_tuple[1], terminal_tuple[1])
+                if output_linear_reference:
+                    # add linear reference
+                    for point, cost in zip(path_points, costs):
+                        point.addMValue(cost)
+                
+                total_cost = costs[-1]
+                path_feature = MinCostPathHelper.create_path_feature_from_points(path_points, (start_tuple[2], terminal_tuple[2],total_cost), sink_fields)
+                sink.addFeature(path_feature, QgsFeatureSink.FastInsert)
 
-        sink.addFeature(path_feature, QgsFeatureSink.FastInsert)
+        # start_point = start_row_cols_dict[start_row_col]
+        # end_point = end_row_cols_dict[selected_end]
+        # path_points = MinCostPathHelper.create_points_from_path(cost_raster, min_cost_path, start_point, end_point)
+        # if output_linear_reference:
+        #     # add linear reference
+        #     for point, cost in zip(path_points, costs):
+        #         point.addMValue(cost)
+        # total_cost = costs[-1]
+        # path_feature = MinCostPathHelper.create_path_feature_from_points(path_points, total_cost, sink_fields)
+
+        # sink.addFeature(path_feature, QgsFeatureSink.FastInsert)
         return {self.OUTPUT: dest_id}
 
     def name(self):
@@ -301,22 +324,20 @@ class LeastCostPathAlgorithm(QgsProcessingAlgorithm):
 
     def shortHelpString(self):
         return self.tr("""
-        This algorithm finds the least cost path with given cost raster and points. 
+        Please ensure all the input layers have the same CRS.
+
+        - Cost raster layer: Numeric raster layer that represents the cost of each spatial unit. It should not contains negative value. Pixel with `NoData` value represent it is unreachable.
         
-        **Parameters:**
-          
-          Please ensure all the input layers have the same CRS.
+        - Cost raster band: The input band of the cost raster.
         
-          - Cost raster layer: Numeric raster layer that represents the cost of each spatial unit. It should not contains negative value. Pixel with `NoData` value represent it is unreachable.
-         
-          - Cost raster band: The input band of the cost raster.
-         
-          - Start-point layer: Layer that contains just one start point.
-         
-          - End-point(s) layer: Layer that contains the destination point(s). If more than one destination are provided, the least cost path will connect start point with the nearest one.
-         
-          - Include liner referencing (PolylineM type): If selected, this algorithm will output the least cost path in `PolylineM` type, with the accumulated cost as linear referencing value.
-         
+        - Start-point layer: Layer that contains just one start point.
+        
+        - End-point(s) layer: Layer that contains the destination point(s).
+        
+        - Only connect with the nearest end points: If more than one destination are provided, it will find the least cost path to all the end points by default. If enabled, the least cost path will only connect start point with the nearest end point.
+
+        - \[Optional\] Include liner referencing (PolylineM type): If selected, this algorithm will output the least cost path in `PolylineM` type, with the accumulated cost as linear referencing value.
+                
         """)
 
     def shortDescription(self):
@@ -364,25 +385,33 @@ class MinCostPathHelper:
 
     @staticmethod
     def create_fields():
+        start_field = QgsField("start point id", QVariant.Int, "int")
+        end_field = QgsField("end point id", QVariant.Int, "int")
         cost_field = QgsField("total cost", QVariant.Double, "double", 10, 3)
         fields = QgsFields()
+        fields.append(start_field)
+        fields.append(end_field)
         fields.append(cost_field)
         return fields
 
     @staticmethod
-    def create_path_feature_from_points(path_points, total_cost, fields):
+    def create_path_feature_from_points(path_points, attr_vals, fields):
         polyline = QgsGeometry.fromPolyline(path_points)
         feature = QgsFeature(fields)
         # feature.setAttribute(0, 1) # id
+        start_index = feature.fieldNameIndex("start point id")
+        end_index = feature.fieldNameIndex("end point id")
         cost_index = feature.fieldNameIndex("total cost")
-        feature.setAttribute(cost_index, total_cost)  # cost
+        feature.setAttribute(start_index, attr_vals[0])
+        feature.setAttribute(end_index, attr_vals[1])
+        feature.setAttribute(cost_index, attr_vals[2])  # cost
         feature.setGeometry(polyline)
         return feature
 
     @staticmethod
-    def features_to_row_cols(point_features, raster_layer):
+    def features_to_tuples(point_features, raster_layer):
+        row_cols = []
 
-        row_cols = {}
         extent = raster_layer.dataProvider().extent()
         # if extent.isNull() or extent.isEmpty:
         #     return list(col_rows)
@@ -396,13 +425,13 @@ class MinCostPathHelper:
                     for pointxy in multi_points:
                         if extent.contains(pointxy):
                             row_col = MinCostPathHelper._point_to_row_col(pointxy, raster_layer)
-                            row_cols[row_col] = pointxy
+                            row_cols.append((row_col, pointxy, point_feature.id()))
 
                 elif point_geom.wkbType() == QgsWkbTypes.Point:
                     pointxy = point_geom.asPoint()
                     if extent.contains(pointxy):
                         row_col = MinCostPathHelper._point_to_row_col(pointxy, raster_layer)
-                        row_cols[row_col] = pointxy
+                        row_cols.append((row_col, pointxy, point_feature.id()))
 
         return row_cols
 
