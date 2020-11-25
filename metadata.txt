@@ -28,6 +28,9 @@ repository=https://github.com/Gooong/LeastCostPath
 # Tags are comma separated with spaces allowed
 tags=least cost path distance raster analysis road
 
+# The plugin is compatible with qgis_process
+hasProcessingProvider=yes
+
 homepage=https://github.com/Gooong/LeastCostPath
 category=Analysis
 icon=icon.png

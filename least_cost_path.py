@@ -51,5 +51,8 @@ class LeastCostPathPlugin(object):
     def initGui(self):
         QgsApplication.processingRegistry().addProvider(self.provider)
 
+    def initProcessing(self):
+        QgsApplication.processingRegistry().addProvider(self.provider)
+
     def unload(self):
         QgsApplication.processingRegistry().removeProvider(self.provider)
