@@ -123,7 +123,8 @@ def dijkstra(start_tuple, end_tuples, block, find_nearest, feedback=None):
 
     total_manhattan = total_manhattan + 1
     bound = total_manhattan
-    feedback.setProgress(1 + 100 * (1 - bound / total_manhattan))
+    if feedback:
+        feedback.setProgress(1 + 100 * (1 - bound / total_manhattan))
 
     came_from[start_row_col] = None
     cost_so_far[start_row_col] = 0
@@ -152,7 +153,8 @@ def dijkstra(start_tuple, end_tuples, block, find_nearest, feedback=None):
 
                 if curr_bound < bound:
                     bound = curr_bound
-                    feedback.setProgress(1 + 100 * (1 - bound / total_manhattan)*(1 - bound / total_manhattan))
+                    if feedback:
+                        feedback.setProgress(1 + 100 * (1 - bound / total_manhattan)*(1 - bound / total_manhattan))
 
         # reacn destination
         if current_node in end_row_cols:
