@@ -38,9 +38,7 @@ class LeastCostPathProvider(QgsProcessingProvider):
 
     def __init__(self):
         QgsProcessingProvider.__init__(self)
-
-        # Load algorithms
-        self.alglist = [LeastCostPathAlgorithm()]
+    
 
     def unload(self):
         """
@@ -53,8 +51,8 @@ class LeastCostPathProvider(QgsProcessingProvider):
         """
         Loads all algorithms belonging to this provider.
         """
-        for alg in self.alglist:
-            self.addAlgorithm( alg )
+        
+        self.addAlgorithm(LeastCostPathAlgorithm())
 
     def id(self):
         """
